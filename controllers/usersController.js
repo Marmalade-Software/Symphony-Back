@@ -12,10 +12,22 @@ exports.getById = async (req, res, next) => {
 };
 
 exports.create = async (req, res, next) => {
-  const { name, email, balance, profile_pic } = req.body;
-  const user = new User({ name, email, balance, profile_pic });
-  await user.save();
-  res.status(201).json(user);
+  try {
+    const { name, email, balance, profile_pic } = req.body;
+    const user = new User({ name, email, balance, profile_pic });
+    await user.save();
+    return res.status(201).json(user);
+  } catch (err) {    
+    // Duplicate key (unique index) for email
+    if (err.code === 11000 && err.keyPattern && err.keyPattern.email) {
+      return res.status(409).json({ message: 'Email already in use' });
+    }    
+    // Validation or other mongoose errors    
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ message: err.message });    
+    }    
+    // Pass other errors to centralized error handler    
+    return next(err);  }
 };
 
 exports.update = async (req, res, next) => {
