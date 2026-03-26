@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const ctrl = require('../controllers/usersController');
+const ctrl = require('../controllers/artistsController');
 
 router.get('/', ctrl.getAll);
 router.get('/:id', ctrl.getById);
