@@ -10,10 +10,80 @@ Common error response (all endpoints)
 }
 ```
 ---
+## Authentication (JWT)
+
+### Overview
+- Use JWT for auth. Issue tokens via:
+  - POST /auth/register — create user + return token
+  - POST /auth/login — return token
+- Protected endpoints require header:
+  Authorization: Bearer <token>
+
+### Token errors
+- 401 Unauthorized
+```json
+{ "message": "Missing token" }
+```
+or
+```json
+{ "message": "Invalid or expired token" }
+```
+
+### POST /auth/register
+Request body:
+```json
+{
+  "name": "Alice Johnson",
+  "email": "alice@example.com",
+  "password": "strongpassword",
+  "profile_pic": "https://example.com/profiles/alice.jpg"
+}
+```
+Success: 201 Created
+```json
+{
+  "token": "jwt.token.here",
+  "user": {
+    "_id": "string",
+    "name": "string",
+    "email": "string",
+    "balance": 0,
+    "profile_pic": "string"
+  }
+}
+```
+Errors: 400 (missing fields), 409 (email already in use)
+
+### POST /auth/login
+Request body:
+```json
+{
+  "email": "alice@example.com",
+  "password": "strongpassword"
+}
+```
+Success: 200 OK
+```json
+{
+  "token": "jwt.token.here",
+  "user": {
+    "_id": "string",
+    "name": "string",
+    "email": "string",
+    "balance": 0,
+    "profile_pic": "string"
+  }
+}
+```
+Error: 400 (missing fields), 401 (invalid credentials)
+
+---
 ## Users
 ---
+### Notes
+- User model now includes required password (hashed). Create users via /auth/register; /users POST may be protected depending on server config.
 ### GET /users
-Success: ``200 OK``
+Success: 200 OK  
 Response body:
 ```json
 [
@@ -31,7 +101,7 @@ Response body:
 ```
 ---
 ### GET /users/:id
-Success: ``200 OK``
+Success: 200 OK
 ```json
 {
   "_id": "string",
@@ -44,7 +114,7 @@ Success: ``200 OK``
   "__v": 0
 }
 ```
-Error: ``404``
+Error: 404
 ```json
 { "message": "User not found" }
 ```
@@ -59,23 +129,24 @@ Request body:
   "profile_pic": "https://example.com/profiles/alice.jpg"
 }
 ```
-Success: ``201`` Created — returns created user (same shape as GET single).
-
+Success: 201 Created — returns created user (same shape as GET single).  
+Errors: 400/409 (duplicate email)  
+Note: route may be protected; use /auth/register to create with password and receive token.
 ---
 ### PUT /users/:id
 Request body: partial or full of user fields (same keys as POST)  
-Success: ``200`` OK — updated user object  
-Error: ``404``
+Success: 200 OK — updated user object  
+Error: 404
 ```json
 { "message": "User not found" }
 ```
 ---
 ### DELETE /users/:id
-Success: ``200`` OK
+Success: 200 OK
 ```json
 { "message": "Deleted" }
 ```
-Error: ``404``
+Error: 404
 ```json
 { "message": "User not found" }
 ```
@@ -83,7 +154,7 @@ Error: ``404``
 ## Artists
 ---
 ### GET /artists
-Success: ``200`` OK
+Success: 200 OK
 ```json
 [
   {
@@ -98,8 +169,8 @@ Success: ``200`` OK
 ```
 ---
 ### GET /artists/:id
-Success: ``200`` OK — artist object  
-Error: ``404``
+Success: 200 OK — artist object  
+Error: 404
 ```json
 { "message": "Artist not found" }
 ```
@@ -112,23 +183,22 @@ Request body:
   "profile_pic": "https://example.com/artist.jpg"
 }
 ```
-Success: ``201`` Created — created artist object
-
+Success: 201 Created — created artist object
 ---
 ### PUT /artists/:id
 Request body: partial/full fields  
-Success: ``200`` OK — updated object  
-Error: ``404``
+Success: 200 OK — updated object  
+Error: 404
 ```json
 { "message": "Artist not found" }
 ```
 ---
 ### DELETE /artists/:id
-Success: ``200`` OK
+Success: 200 OK
 ```json
 { "message": "Deleted" }
 ```
-Error: ``404``
+Error: 404
 ```json
 { "message": "Artist not found" }
 ```
@@ -136,7 +206,7 @@ Error: ``404``
 ## Organizations (Orgs)
 ---
 ### GET /orgs
-Success: ``200`` OK
+Success: 200 OK
 ```json
 [
   {
@@ -152,8 +222,8 @@ Success: ``200`` OK
 ```
 ---
 ### GET /orgs/:id
-Success: ``200`` OK — org object  
-Error: ``404``
+Success: 200 OK — org object  
+Error: 404
 ```json
 { "message": "Org not found" }
 ```
@@ -167,23 +237,22 @@ Request body:
   "profile_pic": "https://example.com/org.jpg"
 }
 ```
-Success: ``201`` Created — created org object
-
+Success: 201 Created — created org object
 ---
 ### PUT /orgs/:id
 Request body: partial/full fields  
-Success: ``200`` OK — updated object  
-Error: ``404``
+Success: 200 OK — updated object  
+Error: 404
 ```json
 { "message": "Org not found" }
 ```
 ---
 ### DELETE /orgs/:id
-Success: ``200`` OK
+Success: 200 OK
 ```json
 { "message": "Deleted" }
 ```
-Error: ``404``
+Error: 404
 ```json
 { "message": "Org not found" }
 ```
@@ -191,7 +260,7 @@ Error: ``404``
 ## Events
 ---
 ### GET /events
-Success: ``200`` OK — list of events; org_id and artists are populated objects
+Success: 200 OK — list of events; org_id and artists are populated objects
 ```json
 [
   {
@@ -209,8 +278,8 @@ Success: ``200`` OK — list of events; org_id and artists are populated objects
 ```
 ---
 ### GET /events/:id
-Success: ``200`` OK — event object (populated)  
-Error: ``404``
+Success: 200 OK — event object (populated)  
+Error: 404
 ```json
 { "message": "Event not found" }
 ```
@@ -226,24 +295,23 @@ Request body:
   "date": "2026-03-26T19:30:00Z"
 }
 ```
-Success: ``201`` Created — created event object  
-Errors: ``400``/``404`` with { "message": "..." }
-
+Success: 201 Created — created event object  
+Errors: 400/404 with { "message": "..." }
 ---
 ### PUT /events/:id
 Request body: partial/full event fields  
-Success: ``200`` OK — updated event  
-Error: ``404``
+Success: 200 OK — updated event  
+Error: 404
 ```json
 { "message": "Event not found" }
 ```
 ---
 ### DELETE /events/:id
-Success: ``200`` OK
+Success: 200 OK
 ```json
 { "message": "Deleted" }
 ```
-Error: ``404``
+Error: 404
 ```json
 { "message": "Event not found" }
 ```
@@ -251,7 +319,7 @@ Error: ``404``
 ## Carts
 ---
 ### GET /carts
-Success: ``200`` OK — list of carts; user_id and event_id populated
+Success: 200 OK — list of carts; user_id and event_id populated
 ```json
 [
   {
@@ -266,8 +334,7 @@ Success: ``200`` OK — list of carts; user_id and event_id populated
 ```
 ---
 ### GET /carts/user/:userId
-Success: ``200`` OK — carts for specified user (event_id populated)
-
+Success: 200 OK — carts for specified user (event_id populated)
 ---
 ### POST /carts
 Request body:
@@ -277,16 +344,15 @@ Request body:
   "event_id": "609d4a... (Event _id)"
 }
 ```
-Success: ``201`` Created — created cart object  
-Errors: ``400``/``404`` with { "message": "..." }
-
+Success: 201 Created — created cart object  
+Errors: 400/404 with { "message": "..." }
 ---
 ### DELETE /carts/:id
-Success: ``200`` OK
+Success: 200 OK
 ```json
 { "message": "Deleted" }
 ```
-Error: ``404``
+Error: 404
 ```json
 { "message": "Cart not found" }
 ```
@@ -298,5 +364,5 @@ Error: ``404``
 ---
 ## Notes
 - Responses include createdAt and updatedAt timestamps.  
-- No authentication implemented; add Authorization header and related error responses if you add auth.  
-- Validation is basic-ensure required fields and valid ObjectId/date formats when calling endpoints.
+- Authentication: use Authorization: Bearer <token> for protected routes; register/login via /auth endpoints.  
+- Validation is basic—ensure required fields and valid ObjectId/date formats when calling endpoints.
